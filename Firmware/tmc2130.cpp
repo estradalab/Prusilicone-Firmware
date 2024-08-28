@@ -20,35 +20,31 @@ static constexpr uint8_t default_dedge_bit = 1;
 #define _DO_STEP_Y      TOGGLE(Y_STEP_PIN)
 #define _DO_STEP_Z      TOGGLE(Z_STEP_PIN)
 #define _DO_STEP_E      TOGGLE(E0_STEP_PIN)
+#define _DO_STEP_E1      TOGGLE(E1_STEP_PIN)
 #else // !TMC2130_DEDGE_STEPPING
 static constexpr uint8_t default_dedge_bit = 0;
 #define _DO_STEP_X      { WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN); TMC2130_MINIMUM_DELAY; WRITE(X_STEP_PIN, INVERT_X_STEP_PIN); }
 #define _DO_STEP_Y      { WRITE(Y_STEP_PIN, !INVERT_Y_STEP_PIN); TMC2130_MINIMUM_DELAY; WRITE(Y_STEP_PIN, INVERT_Y_STEP_PIN); }
 #define _DO_STEP_Z      { WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN); TMC2130_MINIMUM_DELAY; WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN); }
 #define _DO_STEP_E      { WRITE(E0_STEP_PIN, !INVERT_E_STEP_PIN); TMC2130_MINIMUM_DELAY; WRITE(E0_STEP_PIN, INVERT_E_STEP_PIN); }
+#define _DO_STEP_E1      { WRITE(E1_STEP_PIN, !INVERT_E1_STEP_PIN); TMC2130_MINIMUM_DELAY; WRITE(E1_STEP_PIN, INVERT_E1_STEP_PIN); }
 #endif // TMC2130_DEDGE_STEPPING
 
 //mode
 uint8_t tmc2130_mode = TMC2130_MODE_NORMAL;
-
-static constexpr uint8_t tmc2130_default_current_h[4] = TMC2130_CURRENTS_H;
+uint8_t tmc2130_current_h[5] = TMC2130_CURRENTS_H;
 //running currents
-static constexpr uint8_t tmc2130_default_current_r[4] = TMC2130_CURRENTS_R;
-//running currents for homing
-static constexpr uint8_t tmc2130_current_r_home[4] = TMC2130_CURRENTS_R_HOME;
+uint8_t tmc2130_current_r[5] = TMC2130_CURRENTS_R;
 
-static constexpr MotorCurrents homing_currents_P[NUM_AXIS] PROGMEM = {
-	MotorCurrents(tmc2130_current_r_home[0], tmc2130_current_r_home[0]),
-	MotorCurrents(tmc2130_current_r_home[1], tmc2130_current_r_home[1]),
-	MotorCurrents(tmc2130_current_r_home[2], tmc2130_current_r_home[2]),
-	MotorCurrents(tmc2130_current_r_home[3], tmc2130_current_r_home[3])
-};
+//running currents for homing
+static uint8_t tmc2130_current_r_home[5] = TMC2130_CURRENTS_R_HOME;
 
 MotorCurrents currents[NUM_AXIS] = {
-	MotorCurrents(tmc2130_default_current_r[0], tmc2130_default_current_h[0]),
-	MotorCurrents(tmc2130_default_current_r[1], tmc2130_default_current_h[1]),
-	MotorCurrents(tmc2130_default_current_r[2], tmc2130_default_current_h[2]),
-	MotorCurrents(tmc2130_default_current_r[3], tmc2130_default_current_h[3])
+	MotorCurrents(tmc2130_current_r[0], tmc2130_current_h[0]),
+	MotorCurrents(tmc2130_current_r[1], tmc2130_current_h[1]),
+	MotorCurrents(tmc2130_current_r[2], tmc2130_current_h[2]),
+	MotorCurrents(tmc2130_current_r[3], tmc2130_current_h[3]),
+	MotorCurrents(tmc2130_current_r[4], tmc2130_current_h[4])
 };
 
 union ChopConfU {
@@ -58,7 +54,7 @@ union ChopConfU {
 		uint32_t hend : 4;     // HEND hysteresis low value (chm = 0) or OFFSET sine wave offset (chm = 1)
 		uint32_t fd : 1;
 		uint32_t disfdcc : 1;  // Fast decay mode
-		uint32_t rndtf : 1;    // Random TOFF time
+		uint32_t rndtf : 1;    // Random TOFF time 
 		uint32_t chm : 1;      // Chopper mode
 		uint32_t tbl : 2;      // Blank time select
 		uint32_t vsense : 1;   // Sense resistor voltage based current scaling
@@ -121,25 +117,26 @@ constexpr uint32_t PWMCONF_REG(uint32_t PWM_AMPL, uint32_t PWM_GRAD, uint32_t PW
     return uint32_t((PWM_AMPL << 0U) | (PWM_GRAD<< 8U) | (PWM_FREQ << 16U) | (PWM_AUTO << 18U));
 }
 
-static constexpr uint32_t PWM_AMPL[NUM_AXIS] = {TMC2130_PWM_AMPL_X, TMC2130_PWM_AMPL_Y, TMC2130_PWM_AMPL_Z, TMC2130_PWM_AMPL_E};
-static constexpr uint32_t PWM_GRAD[NUM_AXIS] = {TMC2130_PWM_GRAD_X, TMC2130_PWM_GRAD_Y, TMC2130_PWM_GRAD_Z, TMC2130_PWM_GRAD_E};
-static constexpr uint32_t PWM_FREQ[NUM_AXIS] = {TMC2130_PWM_FREQ_X, TMC2130_PWM_FREQ_Y, TMC2130_PWM_FREQ_Z, TMC2130_PWM_FREQ_E};
-static constexpr uint32_t PWM_AUTO[NUM_AXIS] = {TMC2130_PWM_AUTO_X, TMC2130_PWM_AUTO_Y, TMC2130_PWM_AUTO_Z, TMC2130_PWM_AUTO_E};
+static constexpr uint32_t PWM_AMPL[NUM_AXIS] = {TMC2130_PWM_AMPL_X, TMC2130_PWM_AMPL_Y, TMC2130_PWM_AMPL_Z, TMC2130_PWM_AMPL_E, TMC2130_PWM_AMPL_E1};
+static constexpr uint32_t PWM_GRAD[NUM_AXIS] = {TMC2130_PWM_GRAD_X, TMC2130_PWM_GRAD_Y, TMC2130_PWM_GRAD_Z, TMC2130_PWM_GRAD_E, TMC2130_PWM_GRAD_E1};
+static constexpr uint32_t PWM_FREQ[NUM_AXIS] = {TMC2130_PWM_FREQ_X, TMC2130_PWM_FREQ_Y, TMC2130_PWM_FREQ_Z, TMC2130_PWM_FREQ_E, TMC2130_PWM_FREQ_E1};
+static constexpr uint32_t PWM_AUTO[NUM_AXIS] = {TMC2130_PWM_AUTO_X, TMC2130_PWM_AUTO_Y, TMC2130_PWM_AUTO_Z, TMC2130_PWM_AUTO_E, TMC2130_PWM_AUTO_E1};
 
 static PWMConfU pwmconf[NUM_AXIS] = {
     PWMConfU(PWMCONF_REG(PWM_AMPL[X_AXIS], PWM_GRAD[X_AXIS], PWM_FREQ[X_AXIS], PWM_AUTO[X_AXIS])),
     PWMConfU(PWMCONF_REG(PWM_AMPL[Y_AXIS], PWM_GRAD[Y_AXIS], PWM_FREQ[Y_AXIS], PWM_AUTO[Y_AXIS])),
     PWMConfU(PWMCONF_REG(PWM_AMPL[Z_AXIS], PWM_GRAD[Z_AXIS], PWM_FREQ[Z_AXIS], PWM_AUTO[Z_AXIS])),
-    PWMConfU(PWMCONF_REG(PWM_AMPL[E_AXIS], PWM_GRAD[E_AXIS], PWM_FREQ[E_AXIS], PWM_AUTO[E_AXIS]))
+    PWMConfU(PWMCONF_REG(PWM_AMPL[E_AXIS], PWM_GRAD[E_AXIS], PWM_FREQ[E_AXIS], PWM_AUTO[E_AXIS])),
+	PWMConfU(PWMCONF_REG(PWM_AMPL[E1_AXIS], PWM_GRAD[E1_AXIS], PWM_FREQ[E1_AXIS], PWM_AUTO[E1_AXIS]))
 };
 
 // E-axis PWMCONF setting when using E-cool mode. Can be disabled/enabled at run time.
 static constexpr PWMConfU pwmconf_Ecool = PWMConfU(PWMCONF_REG(TMC2130_PWM_AMPL_Ecool, TMC2130_PWM_GRAD_Ecool, PWM_FREQ[E_AXIS], TMC2130_PWM_AUTO_Ecool));
 
-uint8_t tmc2130_mres[4] = {0, 0, 0, 0}; //will be filed at begin of init
+uint8_t tmc2130_mres[5] = {0, 0, 0, 0, 0}; //will be filed at begin of init
 
-uint8_t tmc2130_sg_thr[4] = {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E};
-static uint8_t tmc2130_sg_thr_home[4] = TMC2130_SG_THRS_HOME;
+uint8_t tmc2130_sg_thr[5] = {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E, TMC2130_SG_THRS_E1};
+static uint8_t tmc2130_sg_thr_home[5] = TMC2130_SG_THRS_HOME;
 
 
 uint8_t tmc2130_sg_homing_axes_mask = 0x00;
@@ -155,7 +152,7 @@ uint8_t tmc2130_home_origin[2] = {0, 0};
 uint8_t tmc2130_home_bsteps[2] = {48, 48};
 uint8_t tmc2130_home_fsteps[2] = {48, 48};
 
-uint8_t tmc2130_wave_fac[4] = {0, 0, 0, 0};
+uint8_t tmc2130_wave_fac[5] = {0, 0, 0, 0, 0};
 
 tmc2130_chopper_config_t tmc2130_chopper_config[NUM_AXIS] = {
 	{ // X axis
@@ -186,10 +183,27 @@ tmc2130_chopper_config_t tmc2130_chopper_config[NUM_AXIS] = {
 		.hend = 0,
 		.tbl = 2,
 		.res = 0
-	}
+	},
 #else // !TMC2130_CNSTOFF_E
 	{ // E axis
 		.toff = TMC2130_TOFF_E,
+		.hstr = 5,
+		.hend = 1,
+		.tbl = 2,
+		.res = 0
+	},
+#endif
+#ifdef TMC2130_CNSTOFF_E1
+	{ // E1 axis
+		.toff = TMC2130_TOFF_E1,
+		.hstr = 0,
+		.hend = 0,
+		.tbl = 2,
+		.res = 0
+	}
+#else // !TMC2130_CNSTOFF_E1
+	{ // E1 axis
+		.toff = TMC2130_TOFF_E1,
 		.hstr = 5,
 		.hend = 1,
 		.tbl = 2,
@@ -250,21 +264,25 @@ static ShortTimer tmc2130_overtemp_timer;
 #define _GET_PWR_Y      (READ(Y_ENABLE_PIN) == Y_ENABLE_ON)
 #define _GET_PWR_Z      (READ(Z_ENABLE_PIN) == Z_ENABLE_ON)
 #define _GET_PWR_E      (READ(E0_ENABLE_PIN) == E_ENABLE_ON)
+#define _GET_PWR_E1      (READ(E1_ENABLE_PIN) == E1_ENABLE_ON)
 
 #define _SET_PWR_X(ena) WRITE(X_ENABLE_PIN, ena?X_ENABLE_ON:!X_ENABLE_ON)
 #define _SET_PWR_Y(ena) WRITE(Y_ENABLE_PIN, ena?Y_ENABLE_ON:!Y_ENABLE_ON)
 #define _SET_PWR_Z(ena) WRITE(Z_ENABLE_PIN, ena?Z_ENABLE_ON:!Z_ENABLE_ON)
 #define _SET_PWR_E(ena) WRITE(E0_ENABLE_PIN, ena?E_ENABLE_ON:!E_ENABLE_ON)
+#define _SET_PWR_E1(ena) WRITE(E1_ENABLE_PIN, ena?E1_ENABLE_ON:!E1_ENABLE_ON)
 
 #define _GET_DIR_X      (READ(X_DIR_PIN) == INVERT_X_DIR)
 #define _GET_DIR_Y      (READ(Y_DIR_PIN) == INVERT_Y_DIR)
 #define _GET_DIR_Z      (READ(Z_DIR_PIN) == INVERT_Z_DIR)
 #define _GET_DIR_E      (READ(E0_DIR_PIN) == INVERT_E0_DIR)
+#define _GET_DIR_E1      (READ(E1_DIR_PIN) == INVERT_E1_DIR)
 
 #define _SET_DIR_X(dir) WRITE(X_DIR_PIN, dir?INVERT_X_DIR:!INVERT_X_DIR)
 #define _SET_DIR_Y(dir) WRITE(Y_DIR_PIN, dir?INVERT_Y_DIR:!INVERT_Y_DIR)
 #define _SET_DIR_Z(dir) WRITE(Z_DIR_PIN, dir?INVERT_Z_DIR:!INVERT_Z_DIR)
 #define _SET_DIR_E(dir) WRITE(E0_DIR_PIN, dir?INVERT_E0_DIR:!INVERT_E0_DIR)
+#define _SET_DIR_E1(dir) WRITE(E1_DIR_PIN, dir?INVERT_E1_DIR:!INVERT_E1_DIR)
 
 uint16_t tmc2130_rd_TSTEP(uint8_t axis);
 uint16_t tmc2130_rd_MSCNT(uint8_t axis);
@@ -318,20 +336,24 @@ void tmc2130_init(TMCInitParams params)
 	WRITE(Y_TMC2130_CS, HIGH);
 	WRITE(Z_TMC2130_CS, HIGH);
 	WRITE(E0_TMC2130_CS, HIGH);
+	WRITE(E1_TMC2130_CS, HIGH);
 	SET_OUTPUT(X_TMC2130_CS);
 	SET_OUTPUT(Y_TMC2130_CS);
 	SET_OUTPUT(Z_TMC2130_CS);
 	SET_OUTPUT(E0_TMC2130_CS);
-
+	SET_OUTPUT(E1_TMC2130_CS);
+	
 	SET_INPUT(X_TMC2130_DIAG);
 	SET_INPUT(Y_TMC2130_DIAG);
 	SET_INPUT(Z_TMC2130_DIAG);
 	SET_INPUT(E0_TMC2130_DIAG);
+	SET_INPUT(E1_TMC2130_DIAG);
 	WRITE(X_TMC2130_DIAG,HIGH);
 	WRITE(Y_TMC2130_DIAG,HIGH);
 	WRITE(Z_TMC2130_DIAG,HIGH);
 	WRITE(E0_TMC2130_DIAG,HIGH);
-
+	WRITE(E1_TMC2130_DIAG,HIGH);
+	
 	for (uint_least8_t axis = 0; axis < E_AXIS; axis++) // X Y Z axes
 	{
 		tmc2130_XYZ_reg_init(axis);
@@ -340,15 +362,23 @@ void tmc2130_init(TMCInitParams params)
     // E axis
     tmc2130_setup_chopper(E_AXIS, tmc2130_mres[E_AXIS]);
     tmc2130_wr(E_AXIS, TMC2130_REG_TPOWERDOWN, 0x00000000);
+	tmc2130_setup_chopper(E1_AXIS, tmc2130_mres[E1_AXIS]);
+    tmc2130_wr(E1_AXIS, TMC2130_REG_TPOWERDOWN, 0x00000000);
 #ifndef TMC2130_STEALTH_E
     if( ! params.enableECool ){
         tmc2130_wr(E_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SGSENS);
+		tmc2130_wr(E1_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SGSENS);
     } else {
         tmc2130_wr(E_AXIS, TMC2130_REG_COOLCONF, (((uint32_t)tmc2130_sg_thr[E_AXIS]) << 16));
         tmc2130_wr(E_AXIS, TMC2130_REG_TCOOLTHRS, 0);
         tmc2130_wr(E_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SILENT);
         tmc2130_wr(E_AXIS, TMC2130_REG_PWMCONF, pwmconf_Ecool.dw);
         tmc2130_wr(E_AXIS, TMC2130_REG_TPWMTHRS, TMC2130_TPWMTHRS_E);
+		tmc2130_wr(E1_AXIS, TMC2130_REG_COOLCONF, (((uint32_t)tmc2130_sg_thr[E1_AXIS]) << 16));
+        tmc2130_wr(E1_AXIS, TMC2130_REG_TCOOLTHRS, 0);
+        tmc2130_wr(E1_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SILENT);
+        tmc2130_wr(E1_AXIS, TMC2130_REG_PWMCONF, pwmconf_Ecool.dw);
+        tmc2130_wr(E1_AXIS, TMC2130_REG_TPWMTHRS, TMC2130_TPWMTHRS_E);
         SERIAL_ECHOLNRPGM(eMotorCurrentScalingEnabled);
     }
 #else //TMC2130_STEALTH_E
@@ -357,6 +387,11 @@ void tmc2130_init(TMCInitParams params)
     tmc2130_wr(E_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SILENT);
     tmc2130_wr(E_AXIS, TMC2130_REG_PWMCONF, pwmconf[E_AXIS].dw);
     tmc2130_wr(E_AXIS, TMC2130_REG_TPWMTHRS, TMC2130_TPWMTHRS);
+	tmc2130_wr(E1_AXIS, TMC2130_REG_COOLCONF, (((uint32_t)tmc2130_sg_thr[E1_AXIS]) << 16));
+    tmc2130_wr(E1_AXIS, TMC2130_REG_TCOOLTHRS, 0);
+    tmc2130_wr(E1_AXIS, TMC2130_REG_GCONF, TMC2130_GCONF_SILENT);
+    tmc2130_wr(E1_AXIS, TMC2130_REG_PWMCONF, pwmconf[E1_AXIS].dw);
+    tmc2130_wr(E1_AXIS, TMC2130_REG_TPWMTHRS, TMC2130_TPWMTHRS);
 #endif //TMC2130_STEALTH_E
 
 #ifdef TMC2130_LINEARITY_CORRECTION
@@ -366,6 +401,7 @@ void tmc2130_init(TMCInitParams params)
 	tmc2130_set_wave(Z_AXIS, 247, tmc2130_wave_fac[Z_AXIS]);
 #endif //TMC2130_LINEARITY_CORRECTION_XYZ
 	tmc2130_set_wave(E_AXIS, 247, tmc2130_wave_fac[E_AXIS]);
+	tmc2130_set_wave(E1_AXIS, 247, tmc2130_wave_fac[E1_AXIS]);
 #endif //TMC2130_LINEARITY_CORRECTION
 
 #ifdef PSU_Delta
@@ -397,9 +433,6 @@ void tmc2130_st_isr()
 	}
 }
 
-void crashdet_use_eeprom_setting() {
-	tmc2130_sg_stop_on_crash = eeprom_read_byte((uint8_t*)EEPROM_CRASH_DET);
-}
 
 bool tmc2130_update_sg()
 {
@@ -429,8 +462,8 @@ void tmc2130_home_enter(uint8_t axes_mask)
 			tmc2130_wr(axis, TMC2130_REG_GCONF, TMC2130_GCONF_NORMAL);
 			tmc2130_wr(axis, TMC2130_REG_COOLCONF, (((uint32_t)tmc2130_sg_thr_home[axis]) << 16));
 			tmc2130_wr(axis, TMC2130_REG_TCOOLTHRS, __tcoolthrs(axis));
-			MotorCurrents curr(homing_currents_P[axis]);
-			tmc2130_setup_chopper(axis, tmc2130_mres[axis], &curr);
+			currents[axis].setiRun(tmc2130_current_r_home[axis]);
+			tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
 			tmc2130_wr(axis, TMC2130_REG_GCONF, TMC2130_GCONF_SGSENS); //stallguard output DIAG1, DIAG1 = pushpull
 		}
 	}
@@ -516,6 +549,9 @@ static constexpr bool getIntpolBit([[maybe_unused]]const uint8_t axis, const uin
 #if defined(TMC2130_INTPOL_E) && (TMC2130_INTPOL_E == 0)
     if (axis == E_AXIS) return 0;
 #endif
+#if defined(TMC2130_INTPOL_E1) && (TMC2130_INTPOL_E1 == 0)
+    if (axis == E1_AXIS) return 0;
+#endif
 #if defined(TMC2130_INTPOL_XY) && (TMC2130_INTPOL_XY == 0)
     if (axis == X_AXIS || axis == Y_AXIS) return 0;
 #endif
@@ -526,12 +562,17 @@ static constexpr bool getIntpolBit([[maybe_unused]]const uint8_t axis, const uin
     return (mres != 0); // intpol to 256 only if microsteps aren't 256
 }
 
-static void SetCurrents(const uint8_t axis, const MotorCurrents &curr) {
-    uint8_t iHold = curr.getiHold();
-    const uint8_t iRun = curr.getiRun();
+static void SetCurrents(const uint8_t axis) {
+    uint8_t iHold = currents[axis].getiHold();
+    const uint8_t iRun = currents[axis].getiRun();
 
     // Make sure iHold never exceeds iRun at runtime
-    if (curr.iHoldIsClamped()) {
+    if (iHold > iRun) {
+        iHold = iRun;
+
+        // Update global array such that M913 reports correct values
+        currents[axis].setiHold(iRun);
+
         // Let user know firmware modified the value
         SERIAL_ECHO_START;
         SERIAL_ECHOLNRPGM(_n("Hold current truncated to Run current"));
@@ -553,13 +594,11 @@ static void SetCurrents(const uint8_t axis, const MotorCurrents &curr) {
     };
 
     IHoldRun ihold_irun(iHold, iRun);
-#ifdef DEBUG_TMC_CURRENTS
-	printf_P(PSTR("SetCurrents(axis=%u, iHold=%u, iRun=%u, vsense=%u, reg=%08lX)\n"), axis, iHold, iRun, curr.getvSense(), ihold_irun.dw);
-#endif //DEBUG_TMC_CURRENTS
+
     tmc2130_wr(axis, TMC2130_REG_IHOLD_IRUN, ihold_irun.dw);
 }
 
-void tmc2130_setup_chopper(uint8_t axis, uint8_t mres, const MotorCurrents *curr /* = nullptr */)
+void tmc2130_setup_chopper(uint8_t axis, uint8_t mres)
 {
 	// Initialise the chopper configuration
 	ChopConfU chopconf = ChopConfU(currents[axis].getvSense(), mres);
@@ -571,19 +610,31 @@ void tmc2130_setup_chopper(uint8_t axis, uint8_t mres, const MotorCurrents *curr
 	chopconf.s.tbl = tmc2130_chopper_config[axis].tbl; //blanking time, original value = 2
 
 	tmc2130_wr(axis, TMC2130_REG_CHOPCONF, chopconf.dw);
-	if (curr == nullptr) {
-		curr = &currents[axis];
-	}
-	SetCurrents(axis, *curr);
+	SetCurrents(axis);
+}
+
+void tmc2130_set_current_h(uint8_t axis, uint8_t current)
+{
+//	DBG(_n("tmc2130_set_current_h(axis=%d, current=%d\n"), axis, current);
+	currents[axis].setiHold(current);
+	tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
+}
+
+void tmc2130_set_current_r(uint8_t axis, uint8_t current)
+{
+//	DBG(_n("tmc2130_set_current_r(axis=%d, current=%d\n"), axis, current);
+	currents[axis].setiRun(current);
+	tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
 }
 
 void tmc2130_print_currents()
 {
-	printf_P(_n("tmc2130_print_currents()\n\tH\tR\nX\t%d\t%d\nY\t%d\t%d\nZ\t%d\t%d\nE\t%d\t%d\n"),
-		currents[0].getOriginaliHold(), currents[0].getOriginaliRun(),
-		currents[1].getOriginaliHold(), currents[1].getOriginaliRun(),
-		currents[2].getOriginaliHold(), currents[2].getOriginaliRun(),
-		currents[3].getOriginaliHold(), currents[3].getOriginaliRun()
+	printf_P(_n("tmc2130_print_currents()\n\tH\tR\nX\t%d\t%d\nY\t%d\t%d\nZ\t%d\t%d\nE\t%d\t%d\nJ\t%d\t%d\n"),
+		currents[0].getiHold(), currents[0].getiRun(),
+		currents[1].getiHold(), currents[1].getiRun(),
+		currents[2].getiHold(), currents[2].getiRun(),
+		currents[3].getiHold(), currents[3].getiRun(),
+		currents[4].getiHold(), currents[4].getiRun()
 	);
 }
 
@@ -667,6 +718,7 @@ inline void tmc2130_cs_low(uint8_t axis)
 	case Y_AXIS: WRITE(Y_TMC2130_CS, LOW); break;
 	case Z_AXIS: WRITE(Z_TMC2130_CS, LOW); break;
 	case E_AXIS: WRITE(E0_TMC2130_CS, LOW); break;
+	case E1_AXIS: WRITE(E1_TMC2130_CS, LOW); break;
 	}
 }
 
@@ -678,6 +730,7 @@ inline void tmc2130_cs_high(uint8_t axis)
 	case Y_AXIS: WRITE(Y_TMC2130_CS, HIGH); break;
 	case Z_AXIS: WRITE(Z_TMC2130_CS, HIGH); break;
 	case E_AXIS: WRITE(E0_TMC2130_CS, HIGH); break;
+	case E1_AXIS: WRITE(E1_TMC2130_CS, HIGH); break;
 	}
 }
 
@@ -749,6 +802,7 @@ uint8_t tmc2130_get_pwr(uint8_t axis)
 	case Y_AXIS: return _GET_PWR_Y;
 	case Z_AXIS: return _GET_PWR_Z;
 	case E_AXIS: return _GET_PWR_E;
+	case E1_AXIS: return _GET_PWR_E1;
 	}
 	return 0;
 }
@@ -764,6 +818,7 @@ void tmc2130_set_pwr(uint8_t axis, uint8_t pwr)
 	case Y_AXIS: _SET_PWR_Y(pwr); break;
 	case Z_AXIS: _SET_PWR_Z(pwr); break;
 	case E_AXIS: _SET_PWR_E(pwr); break;
+	case E1_AXIS: _SET_PWR_E1(pwr); break;
 	}
     delayMicroseconds(TMC2130_SET_PWR_DELAY);
 }
@@ -776,6 +831,7 @@ uint8_t tmc2130_get_inv(uint8_t axis)
 	case Y_AXIS: return INVERT_Y_DIR;
 	case Z_AXIS: return INVERT_Z_DIR;
 	case E_AXIS: return INVERT_E0_DIR;
+	case E1_AXIS: return INVERT_E1_DIR;
 	}
 	return 0;
 }
@@ -788,6 +844,7 @@ uint8_t tmc2130_get_dir(uint8_t axis)
 	case Y_AXIS: return _GET_DIR_Y;
 	case Z_AXIS: return _GET_DIR_Z;
 	case E_AXIS: return _GET_DIR_E;
+	case E1_AXIS: return _GET_DIR_E1;
 	}
 	return 0;
 }
@@ -801,6 +858,7 @@ void tmc2130_set_dir(uint8_t axis, uint8_t dir)
 	case Y_AXIS: _SET_DIR_Y(dir); break;
 	case Z_AXIS: _SET_DIR_Z(dir); break;
 	case E_AXIS: _SET_DIR_E(dir); break;
+	case E1_AXIS: _SET_DIR_E1(dir); break;
 	}
     delayMicroseconds(TMC2130_SET_DIR_DELAY);
 }
@@ -813,6 +871,7 @@ void tmc2130_do_step(uint8_t axis)
 	case Y_AXIS: _DO_STEP_Y; break;
 	case Z_AXIS: _DO_STEP_Z; break;
 	case E_AXIS: _DO_STEP_E; break;
+	case E1_AXIS: _DO_STEP_E1; break;
 	}
 }
 
@@ -1032,8 +1091,8 @@ bool tmc2130_home_calibrate(uint8_t axis)
 	bubblesort_uint8(cnt, cl, val);
 	tmc2130_home_origin[axis] = val[cl-1];
 	printf_P(PSTR("result value: %d\n"), tmc2130_home_origin[axis]);
-	if (axis == X_AXIS) eeprom_update_byte_notify((uint8_t*)EEPROM_TMC2130_HOME_X_ORIGIN, tmc2130_home_origin[X_AXIS]);
-	else if (axis == Y_AXIS) eeprom_update_byte_notify((uint8_t*)EEPROM_TMC2130_HOME_Y_ORIGIN, tmc2130_home_origin[Y_AXIS]);
+	if (axis == X_AXIS) eeprom_update_byte((uint8_t*)EEPROM_TMC2130_HOME_X_ORIGIN, tmc2130_home_origin[X_AXIS]);
+	else if (axis == Y_AXIS) eeprom_update_byte((uint8_t*)EEPROM_TMC2130_HOME_Y_ORIGIN, tmc2130_home_origin[Y_AXIS]);
 	return true;
 }
 

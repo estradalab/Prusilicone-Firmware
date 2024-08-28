@@ -39,5 +39,4 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E touch .ctest-finished || exit 0
   BYPRODUCTS ${PROJECT_BINARY_DIR}/.ctest-finished
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-  DEPENDS tests
   )

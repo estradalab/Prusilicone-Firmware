@@ -19,7 +19,7 @@
 */
 
 #ifndef stepper_h
-#define stepper_h
+#define stepper_h 
 
 #include "planner.h"
 
@@ -43,6 +43,7 @@ void st_synchronize();
 // Set current position in steps
 void st_set_position(const long *pos);
 void st_set_e_position(const long &e);
+void st_set_e1_position(const long &e1);
 
 // Get current position in steps
 long st_get_position(uint8_t axis);

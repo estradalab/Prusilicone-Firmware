@@ -24,13 +24,13 @@
 #include "stepper.h"
 #include "planner.h"
 
-// The arc is approximated by generating a huge number of tiny, linear segments. The length of each
-// segment is configured in settings.mm_per_arc_segment.
+// The arc is approximated by generating a huge number of tiny, linear segments. The length of each 
+// segment is configured in settings.mm_per_arc_segment.  
 void mc_arc(const float* position, float* target, const float* offset, float feed_rate, float radius, bool isclockwise, uint16_t start_segment_idx)
 {
-    float start_position[4];
+    float start_position[5];
     memcpy(start_position, position, sizeof(start_position));
-
+    
     float r_axis_x = -offset[X_AXIS];  // Radius vector from center to current location
     float r_axis_y = -offset[Y_AXIS];
     float center_axis_x = start_position[X_AXIS] - r_axis_x;
@@ -56,7 +56,7 @@ void mc_arc(const float* position, float* target, const float* offset, float fee
     if (cs.arc_segments_per_sec > 0)
     {
         // 20200417 - FormerLurker - Implement MIN_ARC_SEGMENTS if it is defined - from Marlin 2.0 implementation
-        float mm_per_arc_segment_sec = feed_rate / (60.f * float(cs.arc_segments_per_sec));
+        float mm_per_arc_segment_sec = (feed_rate / 60.0f) * (1.0f / cs.arc_segments_per_sec);
         if (mm_per_arc_segment_sec < mm_per_arc_segment)
             mm_per_arc_segment = mm_per_arc_segment_sec;
     }
@@ -89,7 +89,7 @@ void mc_arc(const float* position, float* target, const float* offset, float fee
     // calculating here
     const float millimeters_of_travel_arc = hypot(angular_travel_total * radius, fabs(travel_z));
     if (millimeters_of_travel_arc < 0.001) { return; }
-
+    
     // Calculate the number of arc segments
     unsigned short segments = static_cast<unsigned short>(ceil(millimeters_of_travel_arc / mm_per_arc_segment));
 
@@ -123,6 +123,7 @@ void mc_arc(const float* position, float* target, const float* offset, float fee
         const float theta_per_segment = angular_travel_total / segments,
             linear_per_segment = travel_z / (segments),
             segment_extruder_travel = (target[E_AXIS] - start_position[E_AXIS]) / (segments),
+            segment_extruder1_travel = (target[E1_AXIS] - start_position[E1_AXIS]) / (segments),
             sq_theta_per_segment = theta_per_segment * theta_per_segment,
             sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6,
             cos_T = 1 - 0.5f * sq_theta_per_segment;
@@ -149,11 +150,12 @@ void mc_arc(const float* position, float* target, const float* offset, float fee
             start_position[Y_AXIS] = center_axis_y + r_axis_y;
             start_position[Z_AXIS] += linear_per_segment;
             start_position[E_AXIS] += segment_extruder_travel;
+            start_position[E1_AXIS] += segment_extruder1_travel;
             // Clamp to the calculated position.
             clamp_to_software_endstops(start_position);
             // Insert the segment into the buffer
             if (i >= start_segment_idx)
-                plan_buffer_line(start_position[X_AXIS], start_position[Y_AXIS], start_position[Z_AXIS], start_position[E_AXIS], feed_rate, position, i);
+                plan_buffer_line(start_position[X_AXIS], start_position[Y_AXIS], start_position[Z_AXIS], start_position[E_AXIS], start_position[E1_AXIS], feed_rate, position, i);
             // Handle the situation where the planner is aborted hard.
             if (planner_aborted)
                 return;
@@ -162,5 +164,5 @@ void mc_arc(const float* position, float* target, const float* offset, float fee
     // Clamp to the target position.
     clamp_to_software_endstops(target);
     // Ensure last segment arrives at target location.
-    plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feed_rate, position, 0);
+    plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], target[E1_AXIS], feed_rate, position, 0);
 }

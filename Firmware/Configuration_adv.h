@@ -54,7 +54,7 @@
 
 /**
  * Auto-report all at once with M155 S<seconds> C[bitmask] with single timer
- *
+ * 
  * bit 0 = Auto-report temperatures
  * bit 1 = Auto-report fans
  * bit 2 = Auto-report position
@@ -65,12 +65,6 @@
  * bit 7 = free
 */
 #define AUTO_REPORT
-
-// Keepalive period which is restarted with M79
-#define M79_TIMEOUT 30 * 1000 // ms
-
-// A timer which is restarted everytime a G-command is added to the command queue.
-#define USB_TIMER_TIMEOUT 10 * 1000 // ms
 
 //===========================================================================
 //=============================Mechanical Settings===========================
@@ -165,6 +159,7 @@
 #define INVERT_Y_STEP_PIN 0
 #define INVERT_Z_STEP_PIN 0
 #define INVERT_E_STEP_PIN 0
+#define INVERT_E1_STEP_PIN 0
 
 //default stepper release if idle
 #define DEFAULT_STEPPER_DEACTIVE_TIME 60
@@ -229,7 +224,7 @@
 * limit is exceeded.
 */
 	#define SDCARD_SORT_ALPHA //Alphabetical sorting of SD files menu
-
+	
 	// SD Card Sorting options
 	#ifdef SDCARD_SORT_ALPHA
 	  #define SD_SORT_TIME 0
@@ -238,11 +233,11 @@
 	  #define INSERTSORT
 	  // #define SORTING_DUMP
 	  // #define SORTING_SPEEDTEST
-
+	
 	  #define SDSORT_LIMIT       100    // Maximum number of sorted items (10-256).
 	  #define FOLDER_SORTING     -1     // -1=above  0=none  1=below
 	#endif
-
+	
 	#if defined(SDCARD_SORT_ALPHA)
 	  #define HAS_FOLDER_SORTING (FOLDER_SORTING)
 	#endif
@@ -392,7 +387,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 
 /**
  * Enable M120/M121 G-code commands
- *
+ * 
  */
 //#define M120_M121_ENABLED  //Be careful enabling and using these G-code commands.
 

@@ -1,7 +1,6 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#include <stdint.h>
 #include "boards.h"
 
 #define STR_HELPER(x) #x
@@ -20,10 +19,10 @@ extern const char _sPrinterMmuName[] PROGMEM;
 // Otherwise the repository information takes precedence.
 #ifndef CMAKE_CONTROL
 #define FW_MAJOR 3
-#define FW_MINOR 14
+#define FW_MINOR 13
 #define FW_REVISION 0
-#define FW_COMMITNR 7945
-#define FW_FLAVOR BETA      //uncomment if DEV, ALPHA, BETA or RC
+#define FW_COMMITNR 6853
+#define FW_FLAVOR RC      //uncomment if DEV, ALPHA, BETA or RC
 #define FW_FLAVERSION 1     //uncomment if FW_FLAVOR is defined and versioning is needed. Limited to max 8.
 #endif
 
@@ -35,7 +34,7 @@ extern const char _sPrinterMmuName[] PROGMEM;
     // Construct the TWEAK value as it is expected from the enum.
     #define FW_TWEAK (CONCAT(FIRMWARE_REVISION_,FW_FLAVOR) + FW_FLAVERSION)
     #define FW_VERSION STR(FW_MAJOR) "." STR(FW_MINOR) "." STR(FW_REVISION) "-" STR(FW_FLAVOR) "" STR(FW_FLAVERSION)
-    #define FW_VERSION_FULL STR(FW_MAJOR) "." STR(FW_MINOR) "." STR(FW_REVISION) "-" STR(FW_FLAVOR) "" STR(FW_FLAVERSION) "+" STR(FW_COMMITNR)
+    #define FW_VERSION_FULL STR(FW_MAJOR) "." STR(FW_MINOR) "." STR(FW_REVISION) "-" STR(FW_FLAVOR) "" STR(FW_FLAVERSION) "-" STR(FW_COMMITNR)
 #endif
 
 // The full version string and repository source are set via cmake
@@ -71,7 +70,7 @@ extern const char _sPrinterMmuName[] PROGMEM;
 // build by the user have been successfully uploaded into firmware.
 
 #define STRING_VERSION_CONFIG_H SOURCE_DATE_EPOCH " " SOURCE_TIME_EPOCH // build date and time
-#define STRING_CONFIG_H_AUTHOR FW_REPOSITORY // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "(none, default config)" // Who made the changes.
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -101,7 +100,7 @@ extern const char _sPrinterMmuName[] PROGMEM;
 // #define MACHINE_UUID "00000000-0000-0000-0000-000000000000"
 
 // This defines the number of extruders
-#define EXTRUDERS 1
+#define EXTRUDERS 2
 
 //// The following define selects which power supply you have. Please choose the one that matches your setup
 // 1 = ATX
@@ -121,6 +120,13 @@ extern const char _sPrinterMmuName[] PROGMEM;
 #define TEMP_RESIDENCY_TIME 3  // (seconds)
 #define TEMP_HYSTERESIS 5       // (degC) range of +/- temperatures considered "close" to the target one
 #define TEMP_WINDOW     1       // (degC) Window around target to start the residency timer x degC early.
+
+
+
+// If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
+// average current. The value should be an integer and the heat bed will be turned on for 1 interval of
+// HEATER_BED_DUTY_CYCLE_DIVIDER intervals.
+//#define HEATER_BED_DUTY_CYCLE_DIVIDER 4
 
 // If you want the M105 heater power reported in watts, define the BED_WATTS, and (shared for all extruders) EXTRUDER_WATTS
 //#define EXTRUDER_WATTS (12.0*12.0/6.7) //  P=I^2/R
@@ -252,13 +258,15 @@ your extruder heater takes 2 minutes to hit the target on heating.
 #define X_ENABLE_ON 0
 #define Y_ENABLE_ON 0
 #define Z_ENABLE_ON 0
-#define E_ENABLE_ON 0 // For all extruders
+#define E_ENABLE_ON 0
+#define E1_ENABLE_ON 0
 
 // Disables axis when it's not being used.
 #define DISABLE_X 0
 #define DISABLE_Y 0
 #define DISABLE_Z 0
-#define DISABLE_E 0// For all extruders
+#define DISABLE_E 0
+#define DISABLE_E1 0
 
 
 // ENDSTOP SETTINGS:
@@ -351,6 +359,13 @@ your extruder heater takes 2 minutes to hit the target on heating.
 
   //#define Z_PROBE_SLED // turn on if you have a z-probe mounted on a sled like those designed by Charles Bell
   //#define SLED_DOCKING_OFFSET 5 // the extra distance the X axis must travel to pickup the sled. 0 should be fine but you can push it further if you'd like.
+
+  //If defined, the Probe servo will be turned on only during movement and then turned off to avoid jerk
+  //The value is the delay to turn the servo off after powered on - depends on the servo speed; 300ms is good value, but you can try lower it.
+  // You MUST HAVE the SERVO_ENDSTOPS defined to use here a value higher than zero otherwise your code will not compile.
+
+//  #define PROBE_SERVO_DEACTIVATION_DELAY 300
+
 
 //If you have enabled the Bed Auto Leveling and are using the same Z Probe for Z Homing,
 //it is highly recommended you let this Z_SAFE_HOMING enabled!
@@ -476,12 +491,26 @@ your extruder heater takes 2 minutes to hit the target on heating.
 //define BlinkM/CyzRgb Support
 //#define BLINKM
 
+/*********************************************************************\
+* R/C SERVO support
+* Sponsored by TrinityLabs, Reworked by codexmas
+**********************************************************************/
+
+// Number of servos
+//
+// If you select a configuration below, this will receive a default value and does not need to be set manually
+// set it manually if you have more servos than extruders and wish to manually control some
+// leaving it undefined or defining as 0 will disable the servo subsystem
+// If unsure, leave commented / disabled
+//
+//#define NUM_SERVOS 3 // Servo index starts with 0 for M280 command
+
 #define DEFAULT_NOMINAL_FILAMENT_DIA  1.75  //Enter the diameter (in mm) of the filament generally used (3.0 mm or 1.75 mm). Used by the volumetric extrusion.
 
 // Try to maintain a minimum distance from the bed even when Z is
 // unknown when doing the following operations
 #define MIN_Z_FOR_LOAD    50 // lcd filament loading or autoload
-#define MIN_Z_FOR_UNLOAD  20 // lcd filament unloading
+#define MIN_Z_FOR_UNLOAD  50 // lcd filament unloading
 #define MIN_Z_FOR_SWAP    27 // filament change (including M600)
 #define MIN_Z_FOR_PREHEAT 10 // lcd preheat
 

@@ -24,13 +24,13 @@ static void Sound_DoSound_Blind_Alert(void);
 
 void Sound_Init(void)
 {
-     SET_OUTPUT(BEEPER);
+     // SET_OUTPUT(BEEPER);
      eSoundMode = static_cast<eSOUND_MODE>(eeprom_init_default_byte((uint8_t*)EEPROM_SOUND_MODE, e_SOUND_MODE_DEFAULT));
 }
 
 void Sound_SaveMode(void)
 {
-eeprom_update_byte_notify((uint8_t*)EEPROM_SOUND_MODE,(uint8_t)eSoundMode);
+eeprom_update_byte((uint8_t*)EEPROM_SOUND_MODE,(uint8_t)eSoundMode);
 }
 
 void Sound_CycleState(void)
@@ -59,13 +59,13 @@ Sound_SaveMode();
 void __attribute__((noinline)) Sound_MakeCustom(uint16_t ms,uint16_t tone_,bool critical){
      if (critical || eSoundMode != e_SOUND_MODE_SILENT) {
           if(!tone_) {
-               WRITE(BEEPER, HIGH);
+               // WRITE(BEEPER, HIGH);
                _delay(ms);
-               WRITE(BEEPER, LOW);
+               // WRITE(BEEPER, LOW);
           } else {
-               _tone(BEEPER, tone_);
+              //  _tone(BEEPER, tone_);
                _delay(ms);
-               _noTone(BEEPER);
+              //  _noTone(BEEPER);
           }
      }
 }
@@ -118,9 +118,9 @@ static void Sound_DoSound_Blind_Alert(void)
 
      for(nI=0; nI<20; nI++)
      {
-         WRITE(BEEPER,HIGH);
+         // WRITE(BEEPER,HIGH);
          delayMicroseconds(94);
-         WRITE(BEEPER,LOW);
+         // WRITE(BEEPER,LOW);
          delayMicroseconds(94);
      }
 }
@@ -131,9 +131,9 @@ uint8_t nI;
 
  for(nI=0;nI<5;nI++)
      {
-     WRITE(BEEPER,HIGH);
+     // WRITE(BEEPER,HIGH);
      delayMicroseconds(75);
-     WRITE(BEEPER,LOW);
+     //WRITE(BEEPER,LOW);
      delayMicroseconds(75);
      }
 }
@@ -144,9 +144,9 @@ uint8_t nI;
 
 for(nI=0;nI<10;nI++)
      {
-     WRITE(BEEPER,HIGH);
+     // WRITE(BEEPER,HIGH);
      delayMicroseconds(100);
-     WRITE(BEEPER,LOW);
+     // WRITE(BEEPER,LOW);
      delayMicroseconds(100);
      }
 }
@@ -154,9 +154,9 @@ for(nI=0;nI<10;nI++)
 static void Sound_DoSound_Prompt(void)
 {
     backlight_wake(2);
-WRITE(BEEPER,HIGH);
+// WRITE(BEEPER,HIGH);
 _delay_ms(500);
-WRITE(BEEPER,LOW);
+// WRITE(BEEPER,LOW);
 }
 
 static void Sound_DoSound_Alert(bool bOnce)
@@ -166,9 +166,9 @@ uint8_t nI,nMax;
 nMax=bOnce?1:3;
 for(nI=0;nI<nMax;nI++)
      {
-     WRITE(BEEPER,HIGH);
+     // WRITE(BEEPER,HIGH);
      delayMicroseconds(200);
-     WRITE(BEEPER,LOW);
+     // WRITE(BEEPER,LOW);
      delayMicroseconds(500);
      }
 }
@@ -186,27 +186,27 @@ static bool bFirst; // true if the first beep has occurred, e_SOUND_MODE_ONCE
 ///     Once - should beep once
 ///     Assist/Blind - as loud with beep and click on knob rotation and press
 void sound_wait_for_user() {
-#if BEEPER > 0
-     if (eSoundMode == e_SOUND_MODE_SILENT) return;
+// #if BEEPER > 0
+//      if (eSoundMode == e_SOUND_MODE_SILENT) return;
 
-     // Handle case where only one beep is needed
-     if (eSoundMode == e_SOUND_MODE_ONCE) {
-          if (bFirst) return;
-          Sound_MakeCustom(80, 0, false);
-          bFirst = true;
-     }
+//      // Handle case where only one beep is needed
+//      if (eSoundMode == e_SOUND_MODE_ONCE) {
+//           if (bFirst) return;
+//           Sound_MakeCustom(80, 0, false);
+//           bFirst = true;
+//      }
 
-     // Handle case where there should be continous beeps
-     if (beep_timer.expired_cont(CONTINOUS_BEEP_PERIOD)) {
-          beep_timer.start();
-          if (eSoundMode == e_SOUND_MODE_LOUD) {
-               Sound_MakeCustom(80, 0, false);
-          } else {
-               // Assist (lower volume sound)
-               Sound_MakeSound(e_SOUND_TYPE_ButtonEcho);
-          }
-     }
-#endif // BEEPER > 0
+//      // Handle case where there should be continous beeps
+//      if (beep_timer.expired_cont(CONTINOUS_BEEP_PERIOD)) {
+//           beep_timer.start();
+//           if (eSoundMode == e_SOUND_MODE_LOUD) {
+//                Sound_MakeCustom(80, 0, false);
+//           } else {
+//                // Assist (lower volume sound)
+//                Sound_MakeSound(e_SOUND_TYPE_ButtonEcho);
+//           }
+//      }
+// #endif // BEEPER > 0
 }
 
 /// @brief Resets the global state of sound_wait_for_user()

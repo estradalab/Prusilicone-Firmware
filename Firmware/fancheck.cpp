@@ -5,7 +5,6 @@
 #include "messages.h"
 #include "temperature.h"
 #include "stepper.h"
-#include "stopwatch.h"
 
 #define FAN_CHECK_PERIOD 5000 //5s
 #define FAN_CHECK_DURATION 100 //100ms
@@ -94,7 +93,7 @@ void fanSpeedError(unsigned char _fan) {
 
     if (printJobOngoing()) {
         // A print is ongoing, pause the print normally
-        if(!printingIsPaused()) {
+        if(!isPrintPaused) {
             if (usb_timer.running())
                 lcd_pause_usb_print();
             else
@@ -194,7 +193,7 @@ ISR(INT7_vect) {
 		if ((millis_nc() - t_fan_rising_edge) >= FAN_PULSE_WIDTH_LIMIT) {//this pulse was from sensor and not from pwm
 			fan_edge_counter[1] += 2; //we are currently counting all edges so lets count two edges for one pulse
 		}
-	}
+	}	
 	EICRB ^= (1 << 6); //change edge
 }
 #endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
@@ -238,7 +237,7 @@ bool extruder_altfan_detect()
 void altfanOverride_toggle()
 {
     altfanStatus.altfanOverride = !altfanStatus.altfanOverride;
-    eeprom_update_byte_notify((uint8_t *)EEPROM_ALTFAN_OVERRIDE, altfanStatus.altfanOverride);
+    eeprom_update_byte((uint8_t *)EEPROM_ALTFAN_OVERRIDE, altfanStatus.altfanOverride);
 }
 
 bool altfanOverride_get()

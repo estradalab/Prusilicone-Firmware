@@ -19,7 +19,6 @@ import tarfile
 import zipfile
 from argparse import ArgumentParser
 from pathlib import Path
-from tarfile import TarFile
 from urllib.request import urlretrieve
 
 project_root_dir = Path(__file__).resolve().parent.parent
@@ -30,11 +29,11 @@ dependencies_dir = project_root_dir / '.dependencies'
 # yapf: disable
 dependencies = {
     'ninja': {
-        'version': '1.12.1',
+        'version': '1.10.2',
         'url': {
-            'Linux': 'https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip',
-            'Windows': 'https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip',
-            'Darwin': 'https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip',
+            'Linux': 'https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip',
+            'Windows': 'https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-win.zip',
+            'Darwin': 'https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-mac.zip',
         },
     },
     'cmake': {
@@ -93,11 +92,7 @@ def download_and_unzip(url: str, directory: Path):
         obj = tarfile.open(f)
     else:
         obj = zipfile.ZipFile(f, 'r')
-
-    if isinstance(obj, TarFile):
-        obj.extractall(path=str(extract_dir), filter='data')
-    else: # Zip file
-        obj.extractall(path=str(extract_dir))
+    obj.extractall(path=str(extract_dir))
 
     subdir = find_single_subdir(extract_dir)
     shutil.move(str(subdir), str(directory))

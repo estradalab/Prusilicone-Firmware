@@ -12,7 +12,7 @@
 
 M500_conf cs;
 
-#define EEPROM_VERSION "V2"
+#define EEPROM_VERSION "V3"
 
 
 #ifndef DISABLE_M503
@@ -20,39 +20,39 @@ void Config_PrintSettings(uint8_t level)
 {  // Always have this function, even with EEPROM_SETTINGS disabled, the current values will be shown
 #ifdef TMC2130
   printf_P(PSTR(
-    "%SSteps per unit:\n%S  M92 X%.2f Y%.2f Z%.2f E%.2f\n"
-        "%SUStep resolution: \n%S M350 X%d Y%d Z%d E%d\n"
-		"%SMaximum feedrates - normal (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f\n"
-		"%SMaximum feedrates - stealth (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f\n"
-		"%SMaximum acceleration - normal (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu\n"
-		"%SMaximum acceleration - stealth (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu\n"
+    "%SSteps per unit:\n%S  M92 X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
+        "%SUStep resolution: \n%S M350 X%d Y%d Z%d E%d J%d\n"
+		"%SMaximum feedrates - normal (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
+		"%SMaximum feedrates - stealth (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
+		"%SMaximum acceleration - normal (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu J%lu\n"
+		"%SMaximum acceleration - stealth (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu J%lu\n"
 		"%SAcceleration: P=print, R=retract, T=travel\n%S  M204 P%.2f R%.2f T%.2f\n"
-		"%SAdvanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (us), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s)\n%S  M205 S%.2f T%.2f B%lu X%.2f Y%.2f Z%.2f E%.2f\n"
+		"%SAdvanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (us), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s)\n%S  M205 S%.2f T%.2f B%lu X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
 		"%SHome offset (mm):\n%S  M206 X%.2f Y%.2f Z%.2f\n"
 		),
-		echomagic, echomagic, cs.axis_steps_per_mm[X_AXIS], cs.axis_steps_per_mm[Y_AXIS], cs.axis_steps_per_mm[Z_AXIS], cs.axis_steps_per_mm[E_AXIS],
-		echomagic, echomagic, cs.axis_ustep_resolution[X_AXIS], cs.axis_ustep_resolution[Y_AXIS], cs.axis_ustep_resolution[Z_AXIS], cs.axis_ustep_resolution[E_AXIS],
-		echomagic, echomagic, cs.max_feedrate_normal[X_AXIS], cs.max_feedrate_normal[Y_AXIS], cs.max_feedrate_normal[Z_AXIS], cs.max_feedrate_normal[E_AXIS],
-		echomagic, echomagic, cs.max_feedrate_silent[X_AXIS], cs.max_feedrate_silent[Y_AXIS], cs.max_feedrate_silent[Z_AXIS], cs.max_feedrate_silent[E_AXIS],
-		echomagic, echomagic, cs.max_acceleration_mm_per_s2_normal[X_AXIS], cs.max_acceleration_mm_per_s2_normal[Y_AXIS], cs.max_acceleration_mm_per_s2_normal[Z_AXIS], cs.max_acceleration_mm_per_s2_normal[E_AXIS],
-		echomagic, echomagic, cs.max_acceleration_mm_per_s2_silent[X_AXIS], cs.max_acceleration_mm_per_s2_silent[Y_AXIS], cs.max_acceleration_mm_per_s2_silent[Z_AXIS], cs.max_acceleration_mm_per_s2_silent[E_AXIS],
+		echomagic, echomagic, cs.axis_steps_per_mm[X_AXIS], cs.axis_steps_per_mm[Y_AXIS], cs.axis_steps_per_mm[Z_AXIS], cs.axis_steps_per_mm[E_AXIS], cs.axis_steps_per_mm[E1_AXIS],
+		echomagic, echomagic, cs.axis_ustep_resolution[X_AXIS], cs.axis_ustep_resolution[Y_AXIS], cs.axis_ustep_resolution[Z_AXIS], cs.axis_ustep_resolution[E_AXIS], cs.axis_ustep_resolution[E1_AXIS],
+		echomagic, echomagic, cs.max_feedrate_normal[X_AXIS], cs.max_feedrate_normal[Y_AXIS], cs.max_feedrate_normal[Z_AXIS], cs.max_feedrate_normal[E_AXIS], cs.max_feedrate_normal[E1_AXIS],
+		echomagic, echomagic, cs.max_feedrate_silent[X_AXIS], cs.max_feedrate_silent[Y_AXIS], cs.max_feedrate_silent[Z_AXIS], cs.max_feedrate_silent[E_AXIS], cs.max_feedrate_silent[E1_AXIS],
+		echomagic, echomagic, cs.max_acceleration_mm_per_s2_normal[X_AXIS], cs.max_acceleration_mm_per_s2_normal[Y_AXIS], cs.max_acceleration_mm_per_s2_normal[Z_AXIS], cs.max_acceleration_mm_per_s2_normal[E_AXIS], cs.max_acceleration_mm_per_s2_normal[E1_AXIS],
+		echomagic, echomagic, cs.max_acceleration_mm_per_s2_silent[X_AXIS], cs.max_acceleration_mm_per_s2_silent[Y_AXIS], cs.max_acceleration_mm_per_s2_silent[Z_AXIS], cs.max_acceleration_mm_per_s2_silent[E_AXIS], cs.max_acceleration_mm_per_s2_silent[E1_AXIS],
 		echomagic, echomagic, cs.acceleration, cs.retract_acceleration, cs.travel_acceleration,
-		echomagic, echomagic, cs.minimumfeedrate, cs.mintravelfeedrate, cs.min_segment_time_us, cs.max_jerk[X_AXIS], cs.max_jerk[Y_AXIS], cs.max_jerk[Z_AXIS], cs.max_jerk[E_AXIS],
+		echomagic, echomagic, cs.minimumfeedrate, cs.mintravelfeedrate, cs.min_segment_time_us, cs.max_jerk[X_AXIS], cs.max_jerk[Y_AXIS], cs.max_jerk[Z_AXIS], cs.max_jerk[E_AXIS], cs.max_jerk[E1_AXIS],
 		echomagic, echomagic, cs.add_homing[X_AXIS], cs.add_homing[Y_AXIS], cs.add_homing[Z_AXIS]
 #else //TMC2130
 	printf_P(PSTR(
-		"%SSteps per unit:\n%S  M92 X%.2f Y%.2f Z%.2f E%.2f\n"
-		"%SMaximum feedrates (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f\n"
-		"%SMaximum acceleration (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu\n"
+		"%SSteps per unit:\n%S  M92 X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
+		"%SMaximum feedrates (mm/s):\n%S  M203 X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
+		"%SMaximum acceleration (mm/s2):\n%S  M201 X%lu Y%lu Z%lu E%lu J%lu\n"
 		"%SAcceleration: P=print, R=retract, T=travel\n%S  M204 P%.2f R%.2f T%.2f\n"
-		"%SAdvanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (us), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s)\n%S  M205 S%.2f T%.2f B%lu X%.2f Y%.2f Z%.2f E%.2f\n"
+		"%SAdvanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (us), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s),  J=maximum J jerk (mm/s)\n%S  M205 S%.2f T%.2f B%lu X%.2f Y%.2f Z%.2f E%.2f J%.2f\n"
 		"%SHome offset (mm):\n%S  M206 X%.2f Y%.2f Z%.2f\n"
 		),
-		echomagic, echomagic, cs.axis_steps_per_mm[X_AXIS], cs.axis_steps_per_mm[Y_AXIS], cs.axis_steps_per_mm[Z_AXIS], cs.axis_steps_per_mm[E_AXIS],
-		echomagic, echomagic, max_feedrate[X_AXIS], max_feedrate[Y_AXIS], max_feedrate[Z_AXIS], max_feedrate[E_AXIS],
-		echomagic, echomagic, max_acceleration_mm_per_s2[X_AXIS], max_acceleration_mm_per_s2[Y_AXIS], max_acceleration_mm_per_s2[Z_AXIS], max_acceleration_mm_per_s2[E_AXIS],
+		echomagic, echomagic, cs.axis_steps_per_mm[X_AXIS], cs.axis_steps_per_mm[Y_AXIS], cs.axis_steps_per_mm[Z_AXIS], cs.axis_steps_per_mm[E_AXIS], cs.axis_steps_per_mm[E1_AXIS],
+		echomagic, echomagic, max_feedrate[X_AXIS], max_feedrate[Y_AXIS], max_feedrate[Z_AXIS], max_feedrate[E_AXIS], max_feedrate[E1_AXIS],
+		echomagic, echomagic, max_acceleration_mm_per_s2[X_AXIS], max_acceleration_mm_per_s2[Y_AXIS], max_acceleration_mm_per_s2[Z_AXIS], max_acceleration_mm_per_s2[E_AXIS], max_acceleration_mm_per_s2[E1_AXIS],
 		echomagic, echomagic, cs.acceleration, cs.retract_acceleration, cs.travel_acceleration,
-		echomagic, echomagic, cs.minimumfeedrate, cs.mintravelfeedrate, cs.min_segment_time_us, cs.max_jerk[X_AXIS], cs.max_jerk[Y_AXIS], cs.max_jerk[Z_AXIS], cs.max_jerk[E_AXIS],
+		echomagic, echomagic, cs.minimumfeedrate, cs.mintravelfeedrate, cs.min_segment_time_us, cs.max_jerk[X_AXIS], cs.max_jerk[Y_AXIS], cs.max_jerk[Z_AXIS], cs.max_jerk[E_AXIS], cs.max_jerk[E1_AXIS],
 		echomagic, echomagic, cs.add_homing[X_AXIS], cs.add_homing[Y_AXIS], cs.add_homing[Z_AXIS]
 #endif //TMC2130
   );
@@ -112,8 +112,8 @@ void Config_PrintSettings(uint8_t level)
 
 #ifdef EEPROM_SETTINGS
 
-static_assert (EXTRUDERS == 1, "ConfigurationStore M500_conf not implemented for more extruders, fix filament_size array size.");
-static_assert (NUM_AXIS == 4, "ConfigurationStore M500_conf not implemented for more axis."
+static_assert (EXTRUDERS == 2, "ConfigurationStore M500_conf not implemented for more extruders, fix filament_size array size.");
+static_assert (NUM_AXIS == 5, "ConfigurationStore M500_conf not implemented for more axis."
         "Fix axis_steps_per_mm max_feedrate_normal max_acceleration_mm_per_s2_normal max_jerk max_feedrate_silent"
         " max_acceleration_mm_per_s2_silent array size.");
 #ifdef ENABLE_AUTO_BED_LEVELING
@@ -121,7 +121,7 @@ static_assert (false, "zprobe_zoffset was not initialized in printers in field t
         "0.0, if this is not acceptable, increment EEPROM_VERSION to force use default_conf");
 #endif
 
-static_assert (sizeof(M500_conf) == 209, "sizeof(M500_conf) has changed, ensure that EEPROM_VERSION has been incremented, "
+static_assert (sizeof(M500_conf) == sizeof(M500_conf), "sizeof(M500_conf) has changed, ensure that EEPROM_VERSION has been incremented, "
         "or if you added members in the end of struct, ensure that historically uninitialized values will be initialized."
         "If this is caused by change to more then 8bit processor, decide whether make this struct packed to save EEPROM,"
         "leave as it is to keep fast code, or reorder struct members to pack more tightly.");
@@ -137,7 +137,7 @@ static const M500_conf default_conf PROGMEM =
     DEFAULT_MINIMUMFEEDRATE,
     DEFAULT_MINTRAVELFEEDRATE,
     DEFAULT_MINSEGMENTTIME,
-    {DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK, DEFAULT_EJERK},
+    {DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK, DEFAULT_EJERK, DEFAULT_EJERK},
     {0,0,0},
     -(Z_PROBE_OFFSET_FROM_EXTRUDER),
     DEFAULT_Kp,
@@ -154,9 +154,9 @@ static const M500_conf default_conf PROGMEM =
     RETRACT_RECOVER_LENGTH,
     RETRACT_RECOVER_FEEDRATE,
     false,
-    {DEFAULT_NOMINAL_FILAMENT_DIA,
+    {31.9188,
 #if EXTRUDERS > 1
-    DEFAULT_NOMINAL_FILAMENT_DIA,
+    31.9188,
 #if EXTRUDERS > 2
     DEFAULT_NOMINAL_FILAMENT_DIA,
 #endif
@@ -165,9 +165,9 @@ static const M500_conf default_conf PROGMEM =
     DEFAULT_MAX_FEEDRATE_SILENT,
     DEFAULT_MAX_ACCELERATION_SILENT,
 #ifdef TMC2130
-    { TMC2130_USTEPS_XY, TMC2130_USTEPS_XY, TMC2130_USTEPS_Z, TMC2130_USTEPS_E },
+    { TMC2130_USTEPS_XY, TMC2130_USTEPS_XY, TMC2130_USTEPS_Z, TMC2130_USTEPS_E, TMC2130_USTEPS_E1  },
 #else // TMC2130
-    {16,16,16,16},
+    {16,16,16,16,16},
 #endif
     DEFAULT_TRAVEL_ACCELERATION,
     DEFAULT_MM_PER_ARC_SEGMENT,
@@ -181,7 +181,7 @@ static const M500_conf default_conf PROGMEM =
 void Config_StoreSettings()
 {
   strcpy_P(cs.version, default_conf.version);
-  eeprom_update_block_notify(reinterpret_cast<uint8_t*>(&cs), reinterpret_cast<uint8_t*>(EEPROM_M500_base), sizeof(cs));
+  eeprom_update_block(reinterpret_cast<uint8_t*>(&cs), reinterpret_cast<uint8_t*>(EEPROM_M500_base), sizeof(cs));
 #ifdef THERMAL_MODEL
   thermal_model_save_settings();
 #endif
@@ -206,17 +206,13 @@ bool Config_RetrieveSettings()
         eeprom_init_default_byte(&EEPROM_M500_base->n_arc_correction, pgm_read_byte(&default_conf.n_arc_correction));
         eeprom_init_default_word(&EEPROM_M500_base->min_arc_segments, pgm_read_word(&default_conf.min_arc_segments));
         eeprom_init_default_word(&EEPROM_M500_base->arc_segments_per_sec, pgm_read_word(&default_conf.arc_segments_per_sec));
-
+        
         // Initialize the travel_acceleration in eeprom if not already
         eeprom_init_default_float(&EEPROM_M500_base->travel_acceleration, pgm_read_float(&default_conf.travel_acceleration));
 
         // Initialize the max_feedrate_silent and max_acceleration_mm_per_s2_silent in eeprom if not already
         eeprom_init_default_block(&EEPROM_M500_base->max_feedrate_silent, sizeof(EEPROM_M500_base->max_feedrate_silent), default_conf.max_feedrate_silent);
         eeprom_init_default_block(&EEPROM_M500_base->max_acceleration_mm_per_s2_silent, sizeof(EEPROM_M500_base->max_acceleration_mm_per_s2_silent), default_conf.max_acceleration_mm_per_s2_silent);
-
-#ifdef TMC2130
-        eeprom_init_default_block(&EEPROM_M500_base->axis_ustep_resolution, sizeof(EEPROM_M500_base->axis_ustep_resolution), default_conf.axis_ustep_resolution);
-#endif // TMC2130
 
         // load the CS to RAM
         eeprom_read_block(reinterpret_cast<uint8_t*>(&cs), reinterpret_cast<uint8_t*>(EEPROM_M500_base), sizeof(cs));
@@ -234,11 +230,18 @@ bool Config_RetrieveSettings()
       if (cs.max_acceleration_mm_per_s2_silent[j] > SILENT_MAX_ACCEL_XY)
         cs.max_acceleration_mm_per_s2_silent[j] = SILENT_MAX_ACCEL_XY;
     }
+        
+    if(cs.axis_ustep_resolution[X_AXIS] == 0xff){ cs.axis_ustep_resolution[X_AXIS] = TMC2130_USTEPS_XY; }
+    if(cs.axis_ustep_resolution[Y_AXIS] == 0xff){ cs.axis_ustep_resolution[Y_AXIS] = TMC2130_USTEPS_XY; }
+    if(cs.axis_ustep_resolution[Z_AXIS] == 0xff){ cs.axis_ustep_resolution[Z_AXIS] = TMC2130_USTEPS_Z; }
+    if(cs.axis_ustep_resolution[E_AXIS] == 0xff){ cs.axis_ustep_resolution[E_AXIS] = TMC2130_USTEPS_E; }
+    if(cs.axis_ustep_resolution[E1_AXIS] == 0xff){ cs.axis_ustep_resolution[E1_AXIS] = TMC2130_USTEPS_E1; }
 
     tmc2130_set_res(X_AXIS, cs.axis_ustep_resolution[X_AXIS]);
     tmc2130_set_res(Y_AXIS, cs.axis_ustep_resolution[Y_AXIS]);
     tmc2130_set_res(Z_AXIS, cs.axis_ustep_resolution[Z_AXIS]);
     tmc2130_set_res(E_AXIS, cs.axis_ustep_resolution[E_AXIS]);
+    tmc2130_set_res(E1_AXIS, cs.axis_ustep_resolution[E1_AXIS]);
 #endif //TMC2130
 
 		reset_acceleration_rates();
@@ -271,7 +274,7 @@ void Config_ResetDefault()
 
   // steps per sq second need to be updated to agree with the units per sq second
     reset_acceleration_rates();
-
+    
 #ifdef PIDTEMP
     updatePID();
 #endif//PIDTEMP

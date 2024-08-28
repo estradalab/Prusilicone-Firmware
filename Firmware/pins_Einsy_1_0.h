@@ -90,6 +90,14 @@
 #define E0_MS1_PIN          -1
 #define E0_MS2_PIN          -1
 
+#define E1_TMC2130_CS       73
+#define E1_TMC2130_DIAG     17 
+#define E1_STEP_PIN         19 
+#define E1_DIR_PIN          62 
+#define E1_ENABLE_PIN       76
+#define E1_MS1_PIN          -1
+#define E1_MS2_PIN          -1
+
 #define SDPOWER             -1
 #define SDSS                77
 #define LED_PIN             13
@@ -119,17 +127,17 @@
 #define SDCARDDETECT           15
 
 #define TACH_0                 79 // !!! changed from 81 (EINY03)
-#define TACH_1                 80
+#define TACH_1                 80 
 
-#define IR_SENSOR_PIN 62 //idler sensor @PK0 (digital pin 62/A8)
+// #define IR_SENSOR_PIN 62 //idler sensor @PK0 (digital pin 62/A8)
 
-#define MMU_RST_PIN 76
+// #define MMU_RST_PIN 76
 
 // Support for an 8 bit logic analyzer, for example the Saleae.
 // Channels 0-2 are fast, they could generate 2.667Mhz waveform with a software loop.
 #define LOGIC_ANALYZER_CH0		X_MIN_PIN		// PB6
 #define LOGIC_ANALYZER_CH1		Y_MIN_PIN		// PB5
-#define LOGIC_ANALYZER_CH2		53				// PB0 (PROC_nCS)
+/* #define LOGIC_ANALYZER_CH2		53				// PB0 (PROC_nCS)
 // Channels 3-7 are slow, they could generate
 // 0.889Mhz waveform with a software loop and interrupt locking,
 // 1.333MHz waveform without interrupt locking.
@@ -154,10 +162,9 @@
 #define LOGIC_ANALYZER_SERIAL_TX_ENABLE do { UBRR2H = 0; UBRR2L = 0; UCSR2B = (1 << TXEN2) | (1 << UCSZ02); UCSR2C = 0x06; } while (0)
 // Non-checked (quicker) variant. Use it if you are sure that the transmit buffer is already empty.
 #define LOGIC_ANALYZER_SERIAL_TX_WRITE_NC(C) do { if (C & 0x100) UCSR2B |= 1; else UCSR2B &= ~1; UDR2 = C; } while (0)
-#define LOGIC_ANALYZER_SERIAL_TX_WRITE(C) do { \
+#define LOGIC_ANALYZER_SERIAL_TX_WRITE(C) do { \ */
 	/* Wait for empty transmit buffer */ \
-	while (!(UCSR2A & (1<<UDRE2))); \
+	/* /while (!(UCSR2A & (1<<UDRE2))); */ \
 	/* Put data into buffer, sends the data */ \
-	LOGIC_ANALYZER_SERIAL_TX_WRITE_NC(C); \
-} while (0)
-
+	/* LOGIC_ANALYZER_SERIAL_TX_WRITE_NC(C); \
+} while (0) */

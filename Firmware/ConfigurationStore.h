@@ -9,15 +9,15 @@
 typedef struct
 {
     char version[4];
-    float axis_steps_per_mm[4];
-    float max_feedrate_normal[4];
-    uint32_t max_acceleration_mm_per_s2_normal[4];
+    float axis_steps_per_mm[5];
+    float max_feedrate_normal[5];
+    uint32_t max_acceleration_mm_per_s2_normal[5];
     float acceleration; //!< Normal acceleration mm/s^2  THIS IS THE DEFAULT ACCELERATION for all moves. M204 SXXXX
     float retract_acceleration; //!< mm/s^2 filament pull-pack and push-forward while standing still in the other axis M204 TXXXX
     float minimumfeedrate;
     float mintravelfeedrate;
     uint32_t min_segment_time_us; //!< (µs) M205 B
-    float max_jerk[4]; //!< Jerk is a maximum immediate velocity change.
+    float max_jerk[5]; //!< Jerk is a maximum immediate velocity change.
     float add_homing[3];
     float zprobe_zoffset; //!< Only used with define ENABLE_AUTO_BED_LEVELING
     float Kp;
@@ -34,10 +34,10 @@ typedef struct
     float retract_recover_length;
     float retract_recover_feedrate;
     bool volumetric_enabled;
-    float filament_size[1]; //!< cross-sectional area of filament (in millimeters), typically around 1.75 or 2.85, 0 disables the volumetric calculations for the extruder.
-    float max_feedrate_silent[4]; //!< max speeds for silent mode
-    uint32_t max_acceleration_mm_per_s2_silent[4];
-    unsigned char axis_ustep_resolution[4];
+    float filament_size[2]; //!< cross-sectional area of filament (in millimeters), typically around 1.75 or 2.85, 0 disables the volumetric calculations for the extruder.
+    float max_feedrate_silent[5]; //!< max speeds for silent mode
+    uint32_t max_acceleration_mm_per_s2_silent[5];
+    unsigned char axis_ustep_resolution[5];
     float travel_acceleration; //!< travel acceleration mm/s^2
     // Arc Interpolation Settings, configurable via M214
     float mm_per_arc_segment;

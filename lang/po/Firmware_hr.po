@@ -2520,10 +2520,10 @@ msgstr ""
 #. MSG_DESC_FW_UPDATE_NEEDED c=20 r=8
 #: ../../Firmware/mmu2/errors_list.h:290 ../../Firmware/mmu2/errors_list.h:337
 msgid ""
-"MMU FW version is incompatible with printer FW.Update to version 3.0.3."
+"MMU FW version is incompatible with printer FW.Update to version 3.0.2."
 msgstr ""
 "Verzija firmware-a MMU nekompatibilna s FW-om pisača. Ažuriranje na verziju "
-"3.0.3."
+"3.0.2."
 
 #. MSG_PRELOAD_TO_MMU c=17
 #: ../../Firmware/messages.cpp:59 ../../Firmware/ultralcd.cpp:5344
@@ -2589,11 +2589,6 @@ msgstr "Set spreman"
 #: ../../Firmware/messages.cpp:106 ../../Firmware/ultralcd.cpp:5263
 msgid "Set not Ready"
 msgstr "Set nije spreman"
-
-#. MSG_HOSTPRINT c=18
-#: ../../Firmware/messages.cpp:107 ../../Firmware/ultralcd.cpp:5285
-msgid "Print from host"
-msgstr "Printaj sa host"
 
 #. MSG_REPRINT c=18
 #: ../../Firmware/messages.cpp:196 ../../Firmware/ultralcd.cpp:5243

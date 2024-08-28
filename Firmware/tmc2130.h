@@ -7,10 +7,10 @@
 //mode
 extern uint8_t tmc2130_mode;
 //microstep resolution (0 means 256usteps, 8 means 1ustep
-extern uint8_t tmc2130_mres[4];
+extern uint8_t tmc2130_mres[5];
 
 //flags for axis stall detection
-extern uint8_t tmc2130_sg_thr[4];
+extern uint8_t tmc2130_sg_thr[5];
 
 extern bool tmc2130_sg_stop_on_crash;
 extern uint8_t tmc2130_sg_crash; //crash mask
@@ -43,7 +43,7 @@ extern uint8_t tmc2130_home_origin[2];
 extern uint8_t tmc2130_home_bsteps[2];
 extern uint8_t tmc2130_home_fsteps[2];
 
-extern uint8_t tmc2130_wave_fac[4];
+extern uint8_t tmc2130_wave_fac[5];
 
 #pragma pack(push)
 #pragma pack(1)
@@ -95,19 +95,13 @@ struct MotorCurrents {
         }
     }
 
-    // PROGMEM initializer
-    inline __attribute__((always_inline)) MotorCurrents(const MotorCurrents &curr_P) { memcpy_P(this, &curr_P, sizeof(*this)); }
-
     constexpr inline __attribute__((always_inline)) MotorCurrents(uint8_t ir, uint8_t ih)
         : vSense((ir < 32) ? 1 : 0)
         , iRun((ir < 32) ? ir : (ir >> 1))
         , iHold((ir < 32) ? ih : (ih >> 1)) {}
 
     inline uint8_t getiRun() const { return iRun; }
-    inline uint8_t getiHold() const { return min(iHold, iRun); }
-    inline uint8_t getOriginaliRun() const { return vSense ? iRun : iRun << 1; }
-    inline uint8_t getOriginaliHold() const { return min(vSense ? iHold : iHold << 1, getOriginaliRun()); }
-    inline bool iHoldIsClamped() const { return iHold > iRun; }
+    inline uint8_t getiHold() const { return iHold; }
     inline uint8_t getvSense() const { return vSense; }
 
     void __attribute__((noinline)) setiRun(uint8_t ir) {
@@ -168,11 +162,12 @@ extern void tmc2130_sg_measure_start(uint8_t axis);
 //stop current stallguard measuring and report result
 extern uint16_t tmc2130_sg_measure_stop();
 
-// Enable or Disable crash detection according to EEPROM
-void crashdet_use_eeprom_setting();
+extern void tmc2130_setup_chopper(uint8_t axis, uint8_t mres);
 
-extern void tmc2130_setup_chopper(uint8_t axis, uint8_t mres, const MotorCurrents *curr = nullptr);
-
+//set holding current for any axis (M911)
+extern void tmc2130_set_current_h(uint8_t axis, uint8_t current);
+//set running current for any axis (M912)
+extern void tmc2130_set_current_r(uint8_t axis, uint8_t current);
 //print currents (M913)
 extern void tmc2130_print_currents();
 

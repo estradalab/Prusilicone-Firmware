@@ -1,4 +1,4 @@
-/// @file mmu2_protocol.cpp
+/// @file
 #include "mmu2_protocol.h"
 
 // protocol definition
@@ -112,8 +112,11 @@ DecodeStatus Protocol::DecodeRequest(uint8_t c) {
                 rqState = RequestStates::Code;
                 return DecodeStatus::MessageCompleted;
             }
+        } else {
+            requestMsg.code = RequestMsgCodes::unknown;
+            rqState = RequestStates::Error;
+            return DecodeStatus::Error;
         }
-        [[fallthrough]];
     default: //case error:
         if (IsNewLine(c)) {
             rqState = RequestStates::Code;

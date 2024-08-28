@@ -19,9 +19,6 @@ void ultralcd_init();
 #define LCD_STATUS_INFO_TIMEOUT 20000
 #define LCD_STATUS_DELAYED_TIMEOUT 4000
 
-// Reprint
-void lcd_reprint_from_eeprom();
-
 // Set the current status message (equivalent to LCD_STATUS_NONE)
 void lcdui_print_status_line(void);
 void lcd_clearstatus();
@@ -47,23 +44,19 @@ void lcd_setalertstatuspgm(const char* message, uint8_t severity = LCD_STATUS_AL
 uint8_t get_message_level();
 void lcd_reset_alert_level();
 
+void lcd_pick_babystep();
 uint8_t lcd_alright();
 void show_preheat_nozzle_warning();
-void lcd_wait_interact(const char* filament_name);
-void lcd_loading_filament(const char* filament_name);
+void lcd_wait_interact();
+void lcd_loading_filament();
 void lcd_change_success();
 void lcd_loading_color();
 void lcd_sdcard_stop();
 void lcd_pause_print();
 void lcd_pause_usb_print();
-void lcd_send_action_start();
 void lcd_resume_print();
 void lcd_print_stop(); // interactive print stop
-
-/// @brief Stop the print immediately
-/// @param interactive True if the user acknowledged the action from the LCD: resume processing USB commands again
-/// @param unconditional_stop True when the print is stopped by a serious error condition e.g. Thermal Runaway. False otherwise.
-void print_stop(bool interactive=false, bool unconditional_stop=false);
+void print_stop(bool interactive=false);
 #ifdef THERMAL_MODEL
 void lcd_thermal_model_cal();
 #endif //THERMAL_MODEL
@@ -72,11 +65,17 @@ void lcd_load_filament_color_check();
 extern void lcd_belttest();
 extern bool lcd_selftest();
 
-void lcd_menu_statistics();
+void lcd_menu_statistics(); 
 
 void lcd_status_screen();                         // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
 void lcd_menu_extruder_info();                    // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
 void lcd_menu_show_sensors_state();               // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
+
+#ifdef TMC2130
+bool lcd_crash_detect_enabled();
+void lcd_crash_detect_enable();
+void lcd_crash_detect_disable();
+#endif
 
 enum LCDButtonChoice : uint_fast8_t {
     LCD_LEFT_BUTTON_CHOICE = 0,
@@ -93,6 +92,7 @@ extern bool lcd_wait_for_click_delay(uint16_t nDelay);
 void lcd_show_choices_prompt_P(uint8_t selected, const char *first_choice, const char *second_choice, uint8_t second_col, const char *third_choice = nullptr);
 extern void lcd_show_fullscreen_message_and_wait_P(const char *msg);
 extern uint8_t lcd_show_yes_no_and_wait(bool allow_timeouting = true, uint8_t default_selection = LCD_MIDDLE_BUTTON_CHOICE);
+extern uint8_t lcd_show_fullscreen_message_yes_no_and_wait_P(const char *msg, bool allow_timeouting = true, uint8_t default_selection = LCD_MIDDLE_BUTTON_CHOICE);
 extern uint8_t lcd_show_multiscreen_message_with_choices_and_wait_P(
     const char * const msg, bool allow_timeouting, uint8_t default_selection,
     const char * const first_choice, const char * const second_choice, const char * const third_choice = nullptr,
@@ -134,16 +134,16 @@ extern LcdCommands lcd_commands_type;
 
 enum class CustomMsg : uint_least8_t
 {
-    Status,          //!< 0 status message from lcd_status_message variable
-    MeshBedLeveling, //!< 1 Mesh bed leveling in progress
-    FilamentLoading, //!< 2 Loading filament in progress
-    PidCal,          //!< 3 PID tuning in progress
-    TempCal,         //!< 4 PINDA temperature calibration
-    TempCompPreheat, //!< 5 Temperature compensation preheat
-    M0Wait,          //!< 6 M0/M1 Wait command working even from SD
-    M117,            //!< 7 M117 Set the status line message on the LCD
-    Resuming,        //!< 8 Resuming message
-    MMUProgress,     ///< 9 MMU progress message
+    Status,          //!< status message from lcd_status_message variable
+    MeshBedLeveling, //!< Mesh bed leveling in progress
+    FilamentLoading, //!< Loading filament in progress
+    PidCal,          //!< PID tuning in progress
+    TempCal,         //!< PINDA temperature calibration
+    TempCompPreheat, //!< Temperature compensation preheat
+    M0Wait,          //!< M0/M1 Wait command working even from SD
+    M117,            //!< M117 Set the status line message on the LCD
+    Resuming,        //!< Resuming message
+    MMUProgress,     ///< MMU progress message
 };
 
 extern CustomMsg custom_message_type;
@@ -168,6 +168,8 @@ void printf_IRSensorAnalogBoardChange();
 #endif //defined(FILAMENT_SENSOR) && (FILAMENT_SENSOR_TYPE == FSENSOR_IR_ANALOG)
 
 extern int8_t SilentModeMenu;
+
+extern bool isPrintPaused;
 
 extern uint8_t scrollstuff;
 
@@ -203,6 +205,7 @@ void lcd_AutoLoadFilament();
 void lcd_wait_for_heater();
 void lcd_wait_for_cool_down();
 void lcd_move_e(); // NOT static due to usage in Marlin_main
+void lcd_move_e1();
 
 void lcd_temp_cal_show_result(bool result);
 #ifdef PINDA_THERMISTOR
@@ -255,11 +258,5 @@ extern void lcd_pinda_temp_compensation_toggle();
 #endif //PINDA_TEMP_COMP
 
 extern void lcd_heat_bed_on_load_toggle();
-
-#ifdef COMMUNITY_PREVENT_OOZE
-extern void retract_for_ooze_prevention();
-#endif //COMMUNITY_PREVENT_OOZE
-
-extern void sendHostNotification_P(const char* message);
 
 #endif //ULTRALCD_H

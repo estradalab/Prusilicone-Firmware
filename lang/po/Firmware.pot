@@ -1101,7 +1101,7 @@ msgstr ""
 #. MSG_DESC_FW_UPDATE_NEEDED c=20 r=8
 #: ../../Firmware/mmu2/errors_list.h:290 ../../Firmware/mmu2/errors_list.h:337
 msgid ""
-"MMU FW version is incompatible with printer FW.Update to version 3.0.3."
+"MMU FW version is incompatible with printer FW.Update to version 3.0.2."
 msgstr ""
 
 #. MSG_DESC_QUEUE_FULL c=20 r=8
@@ -1968,11 +1968,6 @@ msgstr ""
 #. MSG_SET_NOT_READY c=18
 #: ../../Firmware/messages.cpp:106 ../../Firmware/ultralcd.cpp:5263
 msgid "Set not Ready"
-msgstr ""
-
-#. MSG_HOSTPRINT c=18
-#: ../../Firmware/messages.cpp:107 ../../Firmware/ultralcd.cpp:5285
-msgid "Print from host"
 msgstr ""
 
 #. MSG_SET_TEMPERATURE c=20

@@ -12,13 +12,10 @@
 #include "strlen_cx.h"
 #include "SpoolJoin.h"
 
-#include "messages.h"
-#include "language.h"
-
 #ifdef __AVR__
 // As of FW 3.12 we only support building the FW with only one extruder, all the multi-extruder infrastructure will be removed.
 // Saves at least 800B of code size
-static_assert(EXTRUDERS == 1);
+static_assert(EXTRUDERS == 2);
 
 constexpr float MMM_TO_MMS(float MM_M) { return MM_M / 60.0f; }
 #endif
@@ -34,7 +31,7 @@ void waitForHotendTargetTemp(uint16_t delay, F f) {
 }
 
 void WaitForHotendTargetTempBeep() {
-    waitForHotendTargetTemp(200, [] {});
+    waitForHotendTargetTemp(3000, []{ });
     MakeSound(Prompt);
 }
 
@@ -55,34 +52,20 @@ MMU2::MMU2()
     , tmcFailures(0) {
 }
 
-void MMU2::Status() {
-    // Useful information to see during bootup and change state
-    SERIAL_ECHOPGM("MMU is ");
-    uint8_t status = eeprom_init_default_byte((uint8_t*)EEPROM_MMU_ENABLED, 0);
-    if (status == 1) {
-        SERIAL_ECHOLNRPGM(_O(MSG_ON));
-    } else {
-        SERIAL_ECHOLNRPGM(_O(MSG_OFF));
-    }
-}
-
 void MMU2::Start() {
     mmu2Serial.begin(MMU_BAUD);
 
     PowerOn();
     mmu2Serial.flush(); // make sure the UART buffer is clear before starting communication
 
-    SetCurrentTool(MMU2_NO_TOOL);
+    extruder = MMU2_NO_TOOL;
+    state = xState::Connecting;
 
     // start the communication
+    logic.Start();
     logic.ResetRetryAttempts();
     logic.ResetCommunicationTimeoutAttempts();
-
-    state = xState::Connecting;
-    logic.Start();
 }
-
-MMU2::~MMU2() {}
 
 void MMU2::Stop() {
     StopKeepPowered();
@@ -156,9 +139,8 @@ void MMU2::PowerOn() {
 }
 
 bool MMU2::ReadRegister(uint8_t address) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
     do {
         logic.ReadRegister(address); // we may signal the accepted/rejected status of the response as return value of this function
     } while (!manage_response(false, false));
@@ -169,9 +151,8 @@ bool MMU2::ReadRegister(uint8_t address) {
 }
 
 bool __attribute__((noinline)) MMU2::WriteRegister(uint8_t address, uint16_t data) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     // special cases - intercept requests of registers which influence the printer's behaviour too + perform the change even on the printer's side
     switch (address) {
@@ -197,11 +178,12 @@ void MMU2::mmu_loop() {
     // Atomic compare_exchange would have been the most appropriate solution here, but this gets called only in Marlin's task,
     // so thread safety should be kept
     static bool avoidRecursion = false;
-    if (avoidRecursion) {
+    if (avoidRecursion)
         return;
-    }
     avoidRecursion = true;
+
     mmu_loop_inner(true);
+
     avoidRecursion = false;
 }
 
@@ -212,10 +194,10 @@ void __attribute__((noinline)) MMU2::mmu_loop_inner(bool reportErrors) {
 
 void MMU2::CheckFINDARunout() {
     // Check for FINDA filament runout
-    if (!FindaDetectsFilament() && check_fsensor()) { // Check if we have filament runout detected from sensors
+    if (!FindaDetectsFilament() && check_fsensor()) {
         SERIAL_ECHOLNPGM("FINDA filament runout!");
         marlin_stop_and_save_print_to_ram();
-        restore_print_from_ram_and_continue(0);
+        restore_print_from_ram_and_continue(0,0);
         if (SpoolJoin::spooljoin.isSpoolJoinEnabled() && get_current_tool() != (uint8_t)FILAMENT_UNKNOWN){ // Can't auto if F=?
             enquecommand_front_P(PSTR("M600 AUTO")); // save print and run M600 command
         } else {
@@ -305,12 +287,8 @@ bool MMU2::VerifyFilamentEnteredPTFE() {
             filament_inserted = filament_inserted && (WhereIsFilament() == FilamentState::AT_FSENSOR);
             tlur.Progress(filament_inserted);
             safe_delay_keep_alive(0);
-            if (planner_draining()) {
-                return false; // power panic or a similar issue happened, bail out fast
-            }
         }
     }
-
     Disable_E0();
     if (!filament_inserted) {
         IncrementLoadFails();
@@ -326,9 +304,8 @@ bool MMU2::ToolChangeCommonOnce(uint8_t slot) {
             Disable_E0(); // it may seem counterintuitive to disable the E-motor, but it gets enabled in the planner whenever the E-motor is to move
             tool_change_extruder = slot;
             logic.ToolChange(slot); // let the MMU pull the filament out and push a new one in
-            if (manage_response(true, true)) {
+            if (manage_response(true, true))
                 break;
-            }
             // otherwise: failed to perform the command - unload first and then let it run again
             IncrementMMUFails();
 
@@ -344,7 +321,7 @@ bool MMU2::ToolChangeCommonOnce(uint8_t slot) {
         }
         if (VerifyFilamentEnteredPTFE()) {
             return true; // success
-        } else { // Prepare a retry attempt
+        } else {         // Prepare a retry attempt
             UnloadInner();
             if (retries == 2 && cutter_enabled()) {
                 CutFilamentInner(slot); // try cutting filament tip at the last attempt
@@ -356,9 +333,6 @@ bool MMU2::ToolChangeCommonOnce(uint8_t slot) {
 
 void MMU2::ToolChangeCommon(uint8_t slot) {
     while (!ToolChangeCommonOnce(slot)) { // while not successfully fed into extruder's PTFE tube
-        if (planner_draining()) {
-            return; // power panic happening, pretend the G-code finished ok
-        }
         // failed autoretry, report an error by forcing a "printer" error into the MMU infrastructure - it is a hack to leverage existing code
         // @@TODO theoretically logic layer may not need to be spoiled with the printer error - may be just the manage_response needs it...
         logic.SetPrinterError(ErrorCode::LOAD_TO_EXTRUDER_FAILED);
@@ -369,16 +343,15 @@ void MMU2::ToolChangeCommon(uint8_t slot) {
         static_cast<void>(manage_response(true, true)); // yes, I'd like to silence [[nodiscard]] warning at this spot by casting to void
     }
 
-    SetCurrentTool(slot); // filament change is finished
+    extruder = slot; //filament change is finished
     SpoolJoin::spooljoin.setSlot(slot);
 
     ++toolchange_counter;
 }
 
 bool MMU2::tool_change(uint8_t slot) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     if (slot != extruder) {
         if (/*FindaDetectsFilament()*/
@@ -403,9 +376,8 @@ bool MMU2::tool_change(uint8_t slot) {
 ///- Tx Same as T?, except nozzle doesn't have to be preheated. Tc must be placed after extruder nozzle is preheated to finish filament load.
 ///- Tc Load to nozzle after filament was prepared by Tx and extruder nozzle is already heated.
 bool MMU2::tool_change(char code, uint8_t slot) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     FSensorBlockRunout blockRunout;
 
@@ -442,16 +414,9 @@ uint8_t MMU2::get_tool_change_tool() const {
     return tool_change_extruder == MMU2_NO_TOOL ? (uint8_t)FILAMENT_UNKNOWN : tool_change_extruder;
 }
 
-void MMU2::SetCurrentTool(uint8_t ex){
-    extruder = ex;
-    MMU2_ECHO_MSGRPGM(PSTR("MMU2tool="));
-    SERIAL_ECHOLN((int)ex);
-}
-
 bool MMU2::set_filament_type(uint8_t /*slot*/, uint8_t /*type*/) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     // @@TODO - this is not supported in the new MMU yet
     //    slot = slot; // @@TODO
@@ -476,22 +441,20 @@ void MMU2::UnloadInner() {
     for (;;) {
         Disable_E0();
         logic.UnloadFilament();
-        if (manage_response(false, true)) {
+        if (manage_response(false, true))
             break;
-        }
         IncrementMMUFails();
     }
     MakeSound(Confirm);
 
     // no active tool
-    SetCurrentTool(MMU2_NO_TOOL);
+    extruder = MMU2_NO_TOOL;
     tool_change_extruder = MMU2_NO_TOOL;
 }
 
 bool MMU2::unload() {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     WaitForHotendTargetTempBeep();
 
@@ -499,7 +462,6 @@ bool MMU2::unload() {
         ReportingRAII rep(CommandInProgress::UnloadFilament);
         UnloadInner();
     }
-
     ScreenUpdateEnable();
     return true;
 }
@@ -508,17 +470,15 @@ void MMU2::CutFilamentInner(uint8_t slot) {
     for (;;) {
         Disable_E0();
         logic.CutFilament(slot);
-        if (manage_response(false, true)) {
+        if (manage_response(false, true))
             break;
-        }
         IncrementMMUFails();
     }
 }
 
 bool MMU2::cut_filament(uint8_t slot, bool enableFullScreenMsg /*= true*/) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     if (enableFullScreenMsg) {
         FullScreenMsgCut(slot);
@@ -530,7 +490,7 @@ bool MMU2::cut_filament(uint8_t slot, bool enableFullScreenMsg /*= true*/) {
 
         ReportingRAII rep(CommandInProgress::CutFilament);
         CutFilamentInner(slot);
-        SetCurrentTool(MMU2_NO_TOOL);
+        extruder = MMU2_NO_TOOL;
         tool_change_extruder = MMU2_NO_TOOL;
         MakeSound(SoundType::Confirm);
     }
@@ -548,9 +508,8 @@ bool MMU2::loading_test(uint8_t slot) {
 }
 
 bool MMU2::load_filament(uint8_t slot) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     FullScreenMsgLoad(slot);
     {
@@ -558,9 +517,8 @@ bool MMU2::load_filament(uint8_t slot) {
         for (;;) {
             Disable_E0();
             logic.LoadFilament(slot);
-            if (manage_response(false, false)) {
+            if (manage_response(false, false))
                 break;
-            }
             IncrementMMUFails();
         }
         MakeSound(SoundType::Confirm);
@@ -570,9 +528,8 @@ bool MMU2::load_filament(uint8_t slot) {
 }
 
 bool MMU2::load_filament_to_nozzle(uint8_t slot) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     WaitForHotendTargetTempBeep();
 
@@ -597,9 +554,8 @@ bool MMU2::load_filament_to_nozzle(uint8_t slot) {
 }
 
 bool MMU2::eject_filament(uint8_t slot, bool enableFullScreenMsg /* = true */) {
-    if (!WaitForMMUReady()) {
+    if (!WaitForMMUReady())
         return false;
-    }
 
     if (enableFullScreenMsg) {
         FullScreenMsgEject(slot);
@@ -613,12 +569,11 @@ bool MMU2::eject_filament(uint8_t slot, bool enableFullScreenMsg /* = true */) {
         for (;;) {
             Disable_E0();
             logic.EjectFilament(slot);
-            if (manage_response(false, true)) {
+            if (manage_response(false, true))
                 break;
-            }
             IncrementMMUFails();
         }
-        SetCurrentTool(MMU2_NO_TOOL);
+        extruder = MMU2_NO_TOOL;
         tool_change_extruder = MMU2_NO_TOOL;
         MakeSound(Confirm);
     }
@@ -636,9 +591,8 @@ void MMU2::Home(uint8_t mode) {
 }
 
 void MMU2::SaveHotendTemp(bool turn_off_nozzle) {
-    if (mmu_print_saved & SavedState::Cooldown) {
+    if (mmu_print_saved & SavedState::Cooldown)
         return;
-    }
 
     if (turn_off_nozzle && !(mmu_print_saved & SavedState::CooldownPending)) {
         Disable_E0();
@@ -671,6 +625,9 @@ void MMU2::SaveAndPark(bool move_axes) {
             }
         }
     }
+    // keep the motors powered forever (until some other strategy is chosen)
+    // @@TODO do we need that in 8bit?
+    gcode_reset_stepper_timeout();
 }
 
 void MMU2::ResumeHotendTemp() {
@@ -727,7 +684,8 @@ void MMU2::CheckUserInput() {
         lastButton = Buttons::NoButton; // Clear it.
     }
 
-    if (mmu2.MMULastErrorSource() == ErrorSourcePrinter && btn != Buttons::NoButton) {
+    if (mmu2.MMULastErrorSource() == MMU2::ErrorSourcePrinter && btn != Buttons::NoButton)
+    {
         // When the printer has raised an error screen, and a button was selected
         // the error screen should always be dismissed.
         ClearPrinterError();
@@ -745,7 +703,7 @@ void MMU2::CheckUserInput() {
         SERIAL_ECHOLN((int)buttons_to_uint8t(btn));
         ResumeHotendTemp(); // Recover the hotend temp before we attempt to do anything else...
 
-        if (mmu2.MMULastErrorSource() == ErrorSourceMMU) {
+        if (mmu2.MMULastErrorSource() == MMU2::ErrorSourceMMU) {
             // Do not send a button to the MMU unless the MMU is in error state
             Button(buttons_to_uint8t(btn));
         }
@@ -807,7 +765,6 @@ bool MMU2::manage_response(const bool move_axes, const bool turn_off_nozzle) {
         // - failed -> then do the safety moves on the printer like before
         // - finished ok -> proceed with reading other commands
         safe_delay_keep_alive(0); // calls LogicStep() and remembers its return status
-                                 // also disables stepper motor unlocking
 
         if (mmu_print_saved & SavedState::CooldownPending) {
             if (!nozzleTimeout.running()) {
@@ -829,8 +786,9 @@ bool MMU2::manage_response(const bool move_axes, const bool turn_off_nozzle) {
             // command/operation completed, let Marlin continue its work
             // the E may have some more moves to finish - wait for them
             ResumeHotendTemp();
-            ResumeUnpark(); // We can now travel back to the tower or wherever we were when we saved.
-            if (!TuneMenuEntered()) {
+            ResumeUnpark();             // We can now travel back to the tower or wherever we were when we saved.
+            if (!TuneMenuEntered())
+            {
                 // If the error screen is sleeping (running 'Tune' menu)
                 // then don't reset retry attempts because we this will trigger
                 // an automatic retry attempt when 'Tune' button is selected. We want the
@@ -945,19 +903,15 @@ void MMU2::filament_ramming() {
     execute_extruder_sequence(ramming_sequence, sizeof(ramming_sequence) / sizeof(E_Step));
 }
 
-void MMU2::execute_extruder_sequence(const E_Step *sequence, uint8_t stepCount) {
+void MMU2::execute_extruder_sequence(const E_Step *sequence, uint8_t steps) {
     planner_synchronize();
 
-    // Plan the moves
     const E_Step *step = sequence;
-    for (uint8_t i = stepCount; i > 0; --i) {
+    for (uint8_t i = steps; i > 0; --i) {
         extruder_move(pgm_read_float(&(step->extrude)), pgm_read_float(&(step->feedRate)));
         step++;
     }
-
-    // Wait for the moves to finish
-    // it looks like it's better to sync the moves at the end - smoother move (if the sequence is not too long).
-    planner_synchronize();
+    planner_synchronize(); // it looks like it's better to sync the moves at the end - smoother move (if the sequence is not too long).
 
     Disable_E0();
 }
@@ -1060,7 +1014,7 @@ void MMU2::OnMMUProgressMsgChanged(ProgressCode pc) {
     switch (pc) {
     case ProgressCode::UnloadingToFinda:
         if ((CommandInProgress)logic.CommandInProgress() == CommandInProgress::UnloadFilament
-            || ((CommandInProgress)logic.CommandInProgress() == CommandInProgress::ToolChange)) {
+        || ((CommandInProgress)logic.CommandInProgress() == CommandInProgress::ToolChange)) {
             // If MK3S sent U0 command, ramming sequence takes care of releasing the filament.
             // If Toolchange is done while printing, PrusaSlicer takes care of releasing the filament
             // If printing is not in progress, ToolChange will issue a U0 command.
@@ -1108,10 +1062,14 @@ void MMU2::OnMMUProgressMsgSame(ProgressCode pc) {
             case FilamentState::AT_FSENSOR:
                 // fsensor triggered, finish FeedingToExtruder state
                 loadFilamentStarted = false;
+
+                // Abort any excess E-move from the planner queue
                 planner_abort_queued_moves();
-                {
-                    extruder_move(logic.ExtraLoadDistance() + 2, logic.PulleySlowFeedRate());
-                }
+
+                // After the MMU knows the FSENSOR is triggered it will:
+                // 1. Push the filament by additional 30mm (see fsensorToNozzle)
+                // 2. Disengage the idler and push another 2mm.
+                extruder_move(logic.ExtraLoadDistance() + 2, logic.PulleySlowFeedRate());
                 break;
             case FilamentState::NOT_PRESENT:
                 // fsensor not triggered, continue moving extruder
